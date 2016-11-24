@@ -85,7 +85,7 @@ gensets = {
 
 
 # Worklist algorithm for Reaching Definitions
-for i in range(1,10):
+for i in range(1,len(flowGraphInput) + 1):
     node = flowGraphInput[i]
     l = node["label"]
     for l_prime in node["destinations"]:
@@ -93,10 +93,9 @@ for i in range(1,10):
         W.append(pair)
 
     if l in extremaLabels:
-        analysis[l] = None; #for RD it is the question mark
+        analysis[l] = Set([]); #for RD it is the question mark
     else:
         analysis[l] = Set([]) #emptyset (the bottom of the lattice)
-        
     
 while len(W) > 0:
     (l, l_prime) = W[0]
@@ -106,17 +105,26 @@ while len(W) > 0:
     l_prime_analysis = analysis[l_prime]
 
     # Transfer function applied
-    if l_analysis and (len(l_analysis) > 0): # Check if it is None or empty
-        f_l_set = l_analysis.difference_update(killsets[l]).update(gensets[l])
-        if f_l_set.issubset(l_prime_analysis):
-            print "true"
-        else:
-            print "false"
-    
-    # if f_l(l_analysis) is not a subset of l_prime_analysis,
-    # then do work, else nothing
-    
+    l_analysis.difference_update(killsets[l])
+    l_analysis.update(gensets[l])
+    f_l_set = l_analysis
 
-# for all l in flowGraphInput:
-    # MFP_o(l) = analysis[l]
-    # MFP_bullet(l) = f_l(analysis[l])
+    if not (f_l_set.issubset(l_prime_analysis)):
+        if not (f_l_set == Set([])):
+            l_prime_analysis.update(f_l_set)
+            analysis[l_prime] = l_prime_analysis
+            for nextNode in flowGraphInput[l_prime]["destinations"]:
+                W.append((l_prime, nextNode))
+    else:
+        continue
+                   
+print ""
+print "1 " + str(analysis[1])
+print "2 " + str(analysis[2])
+print "3 " + str(analysis[3])
+print "4 " + str(analysis[4])
+print "5 " + str(analysis[5])
+print "6 " + str(analysis[6])
+print "7 " + str(analysis[7])
+print "8 " + str(analysis[8])
+print "9 " + str(analysis[9])
