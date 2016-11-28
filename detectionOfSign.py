@@ -64,7 +64,9 @@ flowGraphInput = {
 SignsTable = {
     # Plus    
     "+": {
+        # left side
         "+": {
+            # right side
             "+":"+" ,
             "-":"+,-,0",
             "0":"+"
@@ -145,140 +147,192 @@ W = []
 
 variableNames = []
 
-# Worklist algorithm for Detection of sign analysis
+def getVarName(la):
+    if ("=" in la) and (not "==" in la):
+        splitVar = la.split(" = ")[0]
+    
+        if "[" in splitVar:
+            splitVar = splitVar.split("[")[0]
+    
+        if " " in splitVar:
+            splitVar = splitVar.split(" ")[1]
+        
+        return splitVar
+
+# Initialize datastructures
 for i in range(1,len(flowGraphInput) + 1):
     node = flowGraphInput[i]
     l = node["label"]
+    la = node["assignment"]
 
-    if "=" in node["assignment"] and not "==" in node["assignment"]:
-            splitVar = node["assignment"].split(" = ")[0]
-            if splitVar not in variableNames:
-                variableNames.append(splitVar)
-                print "Variable Name in label ", i, variableNames
+    varName = getVarName(la)
+    
+    if l in extremaLabels:
+        # I am trying to use varibale names instead of l but I have this error: TypeError: unhashable type: 'list'
+        analysis[l] = {}  
+    else:
+        analysis[l] = {} #emptyset (the bottom of the lattice)
+        
+        
+    if varName is not None:
+        variableNames.append(varName)
+        #print varName
+        #print "Variable Name in label ", i, variableNames
     
     for l_prime in node["destinations"]:
         pair = (l, l_prime)
         W.append(pair)
-    
-    
-    if l in extremaLabels:
-        # I am trying to use varibale names instead of l but I have this error: TypeError: unhashable type: 'list'
-        analysis[l] = Set([]); 
-    else:
-        analysis[l] = Set([]) #emptyset (the bottom of the lattice)
         
+for i in range(1,len(flowGraphInput) + 1):
+    for varName in variableNames:
+        analysis[flowGraphInput[i]["label"]][varName] = Set(["0"]) 
         
+
 
 # transfer function for n
 def transfer(n):
-    if np.sign(n) == 1:
-        return '+'
-    elif np.sign(n) == -1:
-        return '-'
-    elif np.sign(n) == 0:
-        return '0'
+    if n > 0:
+        return Set(['+'])
+    elif n < 0:
+        return Set(['-'])
+    elif n == 0:
+        return Set(['0'])
 
-
-# x is the label of a node
-def transferX(x):
-    return analysis[x]
-        
-    
-def transferOP(node):
-    splitLHS = node["assignment"].split(" = ")[0]
-    splitRHS = node["assignment"].split(" = ")[1]
-    # counter + 1
-    # counter = a + 1
-        
-    # ['1']
-    # ['counter', '+', '1']
-    split = splitRHS.split(" ")
-    
-    firstVar = None
-    secondVar = None
-    op = None
-
-    try:
-         firstVar = transfer(int(split[0]))
-    except Exception:
-         firstVar = transferX(split[0])
-         
-    # if it is something like counter = counter + 1
-    if(len(split) > 1):
-        try:
-            secondVar = transfer(int(split[2]))
-        except Exception:
-            secondVar = transferX(split[2])
-            
-        result = Set([])
-            
-        for lvar in firstVar:
-            for rvar in secondVar:
-                split[1]
-                print "lvar",lvar , "rvar", rvar
-                
-        analysis[splitLHS].update(result)
-        
-    # if it is something like counter = 1
-    else:
-        analysis[splitLHS].update(firstVar)
-
+# x is a variable
+def transferX(varName, label):
+    return analysis[label][varName]
 
 # transfer function for array
-def transferA(array):
+def transferA(array, label):
+    #TODO: Create this transfer function
     if np.sign(array) == 1:
         return '+'
     elif np.sign(array) == -1:
         return '-'
     elif np.sign(array) == 0:
         return '0'
-
-
+        
+def getType(split):
+    if "[" in split[0]:
+        return "array"
+    else:
+        try:
+            firstVar = int(split[0])
+            return "int"
+        except Exception:
+             return "variable"
+        
+    
+def transferOP(split, label):    
+    firstVar = None
+    secondVar = None
+    op = None
 
     
-while len(W) > 0:
+    # Good thing nobody is gonna do code review!
+    if "[" in split[0]:
+        firstVar = transferA(split[0], label)
+    else:
+        try:
+             firstVar = transfer(int(split[0]))
+        except Exception:
+             firstVar = transferX(split[0], label)
+         
+    # if it is something like counter = counter + 1
+    # or counter = counter + counter
+    if "[" in split[2]:
+        secondVar = transferA(split[2], label)
+    else:
+        try:
+            # second part is an int
+            secondVar = transfer(int(split[2]))
+        except Exception:
+            # second part is a variable
+            secondVar = transferX(split[2], label)
+        
+    result = Set([])
+      
+    #TODO check for division by 0
+    
+    # Update the left hand variable for the current label in the
+    # anaylsis's set of possible signs
+    if firstVar != Set([]) and secondVar != Set([]):
+        for lvar in firstVar:
+            #print "lvar"
+            #print lvar
+            for rvar in secondVar:
+                #print "rvar"
+                #print rvar
+                lookup = SignsTable[split[1]][lvar][rvar]
+                #print "lookup"
+                #print lookup
+                result.update(Set([lookup]))
+                #print "lvar",lvar , "rvar", rvar
+
+    print "resutl"
+    print result
+    return result
+
+
+
+# Using algorithm and doing detection of signs
+while (len(W) > 0):
+    #print "W"
+    #print len(W)
     (l, l_prime) = W[0]
     W = W[1:]
     
-    l_analysis = analysis[l]
-    l_prime_analysis = analysis[l_prime]
+    assi = flowGraphInput[l]["assignment"]
+    
+    #print "varname: " + str(varName)
     
     
-    
-for i in range(1,len(flowGraphInput) + 1):
-    node = flowGraphInput[i]
-    
-    if "=" in node["assignment"] and not "==" in node["assignment"]:
-        #print "I want to update the sign ", node["assignment"]
+    # We only care about signs if it is an assignment
+    if ("=" in assi) and (not "==" in assi):
+        varName = getVarName(flowGraphInput[l]["assignment"])
+        l_analysis = analysis[l][varName]
+        l_prime_analysis = analysis[l_prime][varName]
+        # Are there two variables on the right hand side or 1?
+        s2 = assi.split(" = ")[1].split(" ")
+        if len(s2) > 2:
+            # it is something like counter = counter + 1 
+            f_l_set = transferOP(s2, l)
+            print "fl"
+            print f_l_set
+            if not (f_l_set.issubset(l_prime_analysis)):
+                if not (f_l_set == Set([])):
+                    l_prime_analysis.update(f_l_set)
+                    analysis[l_prime][varName] = l_prime_analysis
+                    for nextNode in flowGraphInput[l_prime]["destinations"]:
+                        W.append((l_prime, nextNode))
+        else:
+            varType = getType(s2)
+            
+            if varType == "array":
+                print "array"
+            elif varType == "int":
+                f_l_set = transfer(s2[0])
+                if not (f_l_set.issubset(l_prime_analysis)):
+                    if not (f_l_set == Set([])):
+                        l_prime_analysis.update(f_l_set)
+                        analysis[l_prime][varName] = l_prime_analysis
+                        for nextNode in flowGraphInput[l_prime]["destinations"]:
+                            W.append((l_prime, nextNode))
+                print "int"
+            else:
+                f_l_set = transferX(s2[0], l)
+                if not (f_l_set.issubset(l_prime_analysis)):
+                    if not (f_l_set == Set([])):
+                        l_prime_analysis.update(f_l_set)
+                        analysis[l_prime][varName] = l_prime_analysis
+                        for nextNode in flowGraphInput[l_prime]["destinations"]:
+                            W.append((l_prime, nextNode))
+                print "variable"
         
-        transferOP(node)
-        
-        
-        #split = node["assignment"].split(" = ")[1]
-        #print split, "split is "
-        #analysis[node["label"]].update(transfer())
-        #z.add("+")
-        #print z
-    else:
-        continue
-    
-    
-'''
-    if not (f_l_set.issubset(l_prime_analysis)):
-        if not (f_l_set == Set([])):
-            l_prime_analysis.update(f_l_set)
-            analysis[l_prime] = l_prime_analysis
-            for nextNode in flowGraphInput[l_prime]["destinations"]:
-                W.append((l_prime, nextNode))
-    else:
-        continue
-        
-'''
 
-
-
-'''
-                   
+    
+   
+          
 print ""
 print "1 " + str(analysis[1])
 print "2 " + str(analysis[2])
@@ -290,4 +344,4 @@ print "7 " + str(analysis[7])
 print "8 " + str(analysis[8])
 print "9 " + str(analysis[9])
 
-'''
+

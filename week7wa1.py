@@ -93,7 +93,7 @@ for i in range(1,len(flowGraphInput) + 1):
         W.append(pair)
 
     if l in extremaLabels:
-        analysis[l] = Set([]); #for RD it is the question mark
+        analysis[l] = Set([]) #for RD it is the question mark
     else:
         analysis[l] = Set([]) #emptyset (the bottom of the lattice)
     
@@ -115,8 +115,6 @@ while len(W) > 0:
             analysis[l_prime] = l_prime_analysis
             for nextNode in flowGraphInput[l_prime]["destinations"]:
                 W.append((l_prime, nextNode))
-    else:
-        continue
                    
 print ""
 print "1 " + str(analysis[1])
