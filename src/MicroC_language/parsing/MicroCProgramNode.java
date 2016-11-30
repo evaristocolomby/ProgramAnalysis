@@ -4,14 +4,12 @@
  */
 public class MicroCProgramNode {
    String name;
-   MicroCProgramNode children;
    MicroCProgramNode parent;
    Integer node_counter;
 
-    public MicroCProgramNode(String name, MicroCProgramNode children, MicroCProgramNode parent, Integer node_counter) {
-        this.name = name;
-        this.children = children;
-        this.parent = parent;
+
+    public MicroCProgramNode(String name, Integer node_counter) {
+        this.name = name;        
         this.node_counter = node_counter;
     }
     
@@ -28,14 +26,6 @@ public class MicroCProgramNode {
         this.name = name;
     }
 
-    public MicroCProgramNode getChildren() {
-        return children;
-    }
-
-    public void setChildren(MicroCProgramNode children) {
-        this.children = children;
-    }
-
     public MicroCProgramNode getParent() {
         return parent;
     }
@@ -50,5 +40,5 @@ public class MicroCProgramNode {
 
     public void setNode_counter(Integer node_counter) {
         this.node_counter = node_counter;
-    }
+    }    
 }
