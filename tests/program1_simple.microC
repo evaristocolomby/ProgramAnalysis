@@ -1,0 +1,17 @@
+/* This was is our first program - It's a simple definition that we use to create a flow graph */
+
+{ int i; 
+  int b;   
+  int A[15];
+    
+  i = 0;
+  
+  while (i<15)
+  {
+    i=i+2;
+    if (i==3) { A[i] = 0;}
+    else {A[i] = i;}   
+  }
+  
+  b=3;
+}

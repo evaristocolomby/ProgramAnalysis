@@ -6,10 +6,11 @@
   i=0;
   while (i<10)
         { if (A[i]+1>=0)
-             { x=x+A[i]; i=i+1;}
+             { x=x+A[i+10]; i=i+1;}
           else { i=i+1; break; } /* this is a comment */
           y=y+1;
         }
+  A[10] = 4;
   write x/y;
   read z;
 }
